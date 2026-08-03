@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import './radix.js';
 import {
   Flame, Plus, X, Users, ShieldCheck, ChevronRight, Sparkles,
-  Lock, LogOut, Minus, TrendingUp, Smartphone,
+  Lock, LogOut, Minus, TrendingUp, Smartphone, Spade, CircleUserRound,
 } from 'lucide-react';
 
 const CardMini = ({ rank, suit, color }) => (
@@ -36,14 +36,14 @@ const AVATAR_COLORS = [
   'bg-violet-500', 'bg-orange-500', 'bg-pink-500',
 ];
 
-const Avatar = ({ name, index }) => {
-  const initials = name.replace(/[0x\.…]/g, '').slice(0, 2).toUpperCase();
+const Avatar = ({ index }) => {
   const color = AVATAR_COLORS[index % AVATAR_COLORS.length];
   return (
-    <div className={`w-10 h-10 rounded-full ${color} flex items-center justify-center text-xs font-bold text-white border-2 border-white/10`}>
-      {initials}
+    <div className={`w-10 h-10 rounded-full ${color}/15 border-2 border-white/10 flex items-center justify-center`}>
+      <CircleUserRound className={`w-5 h-5 ${color.replace('bg-', 'text-')}`} strokeWidth={2} />
     </div>
   );
+};
 };
 
 const TABLES = [
@@ -156,7 +156,7 @@ export default function App() {
                 <div key={t.id} className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-3.5 flex items-center justify-between hover:border-emerald-400/30 transition">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1A2436] to-[#0F1622] border border-white/10 flex items-center justify-center text-base">
-                      🂡
+                      <Spade className="w-4 h-4 text-emerald-400" />
                     </div>
                     <div>
                       <div className="flex items-center gap-1.5">
@@ -252,7 +252,7 @@ export default function App() {
               {BOTS.map((b) => (
                 <div key={b.id} className={`absolute ${SEAT_POS[b.seat]} flex flex-col items-center gap-1`}>
                   <div className="relative">
-                    <Avatar name={b.name} index={b.id} />
+                    <Avatar index={b.id} />
                     <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#0a1220]" />
                   </div>
                   <span className="text-[9px] text-slate-500 font-mono">{b.name}</span>
