@@ -30,6 +30,22 @@ const StatusPill = ({ live }) => (
   </span>
 );
 
+
+const AVATAR_COLORS = [
+  'bg-rose-500', 'bg-amber-500', 'bg-emerald-500', 'bg-cyan-500',
+  'bg-violet-500', 'bg-orange-500', 'bg-pink-500',
+];
+
+const Avatar = ({ name, index }) => {
+  const initials = name.replace(/[0x\.…]/g, '').slice(0, 2).toUpperCase();
+  const color = AVATAR_COLORS[index % AVATAR_COLORS.length];
+  return (
+    <div className={`w-10 h-10 rounded-full ${color} flex items-center justify-center text-xs font-bold text-white border-2 border-white/10`}>
+      {initials}
+    </div>
+  );
+};
+
 const TABLES = [
   { id: 1, name: 'Archipelago Table', stakes: '0.01 – 0.1 XRD', seats: '5/9', live: true },
   { id: 2, name: 'Garuda Table', stakes: '0.1 – 1 XRD', seats: '9/9', live: false },
@@ -235,8 +251,8 @@ export default function App() {
             <div className="relative flex-1 rounded-[3rem] bg-gradient-to-b from-[#101c30] to-[#0a1220] border-2 border-white/[0.06] mt-3 mb-4 min-h-[380px]">
               {BOTS.map((b) => (
                 <div key={b.id} className={`absolute ${SEAT_POS[b.seat]} flex flex-col items-center gap-1`}>
-                  <div className="relative w-10 h-10 rounded-full bg-[#141a2b] border-2 border-white/10 flex items-center justify-center text-lg">
-                    {b.avatar}
+                  <div className="relative">
+                    <Avatar name={b.name} index={b.id} />
                     <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#0a1220]" />
                   </div>
                   <span className="text-[9px] text-slate-500 font-mono">{b.name}</span>
