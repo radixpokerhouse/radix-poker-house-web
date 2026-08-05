@@ -1,16 +1,74 @@
 import { useState, useEffect } from 'react';
 import './radix.js';
 import {
-  Flame, Plus, X, Users, ShieldCheck, ChevronRight, Sparkles,
-  Lock, LogOut, Minus, TrendingUp, Smartphone, Spade, CircleUserRound,
+  Hexagon, Plus, X, Users, ShieldCheck, ChevronRight, Sparkles,
+  Lock, LogOut, Minus, TrendingUp, Smartphone, Fingerprint,
 } from 'lucide-react';
 
-const CardMini = ({ rank, suit, color }) => (
-  <div className="w-8 h-11 rounded-md bg-[#F4F6FA] flex flex-col items-center justify-center shadow-md shrink-0 font-mono">
-    <span className={`text-xs font-semibold ${color}`}>{rank}</span>
-    <span className={`text-sm ${color}`}>{suit}</span>
-  </div>
+const SUIT_GLYPH = { s: '♠', h: '♥', d: '♦', c: '♣' };
+const SUIT_COLOR = { s: 'text-slate-900', h: 'text-rose-500', d: 'text-rose-500', c: 'text-slate-900' };
+
+const PlayingCard = ({ rank, suit, size = 'md', faceDown = false }) => {
+  const sizes = {
+    sm: { box: 'w-8 h-11', corner: 'text-[8px]', center: 'text-sm' },
+    md: { box: 'w-11 h-15', corner: 'text-[10px]', center: 'text-lg' },
+    lg: { box: 'w-20 h-28', corner: 'text-sm', center: 'text-4xl' },
+  };
+  const s = sizes[size];
+
+  if (faceDown) {
+    return (
+      <div className={`${s.box} rounded-md bg-gradient-to-br from-[#1c2440] to-[#0a0f1c] border border-emerald-400/20 shadow-lg relative overflow-hidden shrink-0`}>
+        <div
+          className="absolute inset-0 opacity-25"
+          style={{ backgroundImage: 'repeating-linear-gradient(45deg, rgba(52,211,153,0.5) 0px, rgba(52,211,153,0.5) 1.5px, transparent 1.5px, transparent 7px)' }}
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Hexagon className="w-1/3 h-1/3 text-emerald-400/50" fill="currentColor" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${s.box} rounded-md bg-gradient-to-b from-white to-slate-100 shadow-lg relative shrink-0 border border-black/5 font-mono`}>
+      <div className={`absolute top-1 left-1 flex flex-col items-center leading-none font-bold ${s.corner} ${SUIT_COLOR[suit]}`}>
+        <span>{rank}</span>
+        <span>{SUIT_GLYPH[suit]}</span>
+      </div>
+      <div className={`absolute bottom-1 right-1 flex flex-col items-center leading-none font-bold rotate-180 ${s.corner} ${SUIT_COLOR[suit]}`}>
+        <span>{rank}</span>
+        <span>{SUIT_GLYPH[suit]}</span>
+      </div>
+      <div className={`absolute inset-0 flex items-center justify-center ${s.center} ${SUIT_COLOR[suit]} opacity-70`}>
+        {SUIT_GLYPH[suit]}
+      </div>
+    </div>
+  );
+};
+
+const PokerChipIcon = ({ className }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none">
+    <circle cx="12" cy="12" r="9.5" stroke="currentColor" strokeWidth="1.8" />
+    <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.3" />
+    <path d="M12 1.6v3.1M12 19.3v3.1M1.6 12h3.1M19.3 12h3.1M5.2 5.2l2.2 2.2M16.6 16.6l2.2 2.2M18.8 5.2l-2.2 2.2M7.4 16.6l-2.2 2.2"
+      stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
 );
+
+const AVATAR_COLORS = [
+  'bg-rose-500', 'bg-amber-500', 'bg-emerald-500', 'bg-cyan-500',
+  'bg-violet-500', 'bg-orange-500', 'bg-pink-500',
+];
+
+const Avatar = ({ index }) => {
+  const color = AVATAR_COLORS[index % AVATAR_COLORS.length];
+  return (
+    <div className={`w-10 h-10 rounded-full ${color}/15 border-2 border-white/10 flex items-center justify-center`}>
+      <Fingerprint className={`w-5 h-5 ${color.replace('bg-', 'text-')}`} strokeWidth={2} />
+    </div>
+  );
+};
 
 const ChipTag = ({ amount, tone = 'cyan' }) => {
   const tones = {
@@ -30,22 +88,6 @@ const StatusPill = ({ live }) => (
   </span>
 );
 
-
-const AVATAR_COLORS = [
-  'bg-rose-500', 'bg-amber-500', 'bg-emerald-500', 'bg-cyan-500',
-  'bg-violet-500', 'bg-orange-500', 'bg-pink-500',
-];
-
-const Avatar = ({ index }) => {
-  const color = AVATAR_COLORS[index % AVATAR_COLORS.length];
-  return (
-    <div className={`w-10 h-10 rounded-full ${color}/15 border-2 border-white/10 flex items-center justify-center`}>
-      <CircleUserRound className={`w-5 h-5 ${color.replace('bg-', 'text-')}`} strokeWidth={2} />
-    </div>
-  );
-};
-};
-
 const TABLES = [
   { id: 1, name: 'Archipelago Table', stakes: '0.01 – 0.1 XRD', seats: '5/9', live: true },
   { id: 2, name: 'Garuda Table', stakes: '0.1 – 1 XRD', seats: '9/9', live: false },
@@ -54,13 +96,13 @@ const TABLES = [
 ];
 
 const BOTS = [
-  { id: 1, name: '0x4F…a2c1', avatar: '🦊', chips: 5800, seat: 'top-left' },
-  { id: 2, name: 'anders.xrd', avatar: '🐯', chips: 9200, seat: 'top' },
-  { id: 3, name: '0x9C…e17f', avatar: '🐺', chips: 3250, seat: 'top-right' },
-  { id: 4, name: 'stakr_dev', avatar: '🦁', chips: 6800, seat: 'right' },
-  { id: 5, name: '0x2B…7fd3', avatar: '🐢', chips: 7050, seat: 'bottom-right' },
-  { id: 6, name: 'vaultan', avatar: '🦅', chips: 2500, seat: 'bottom-left' },
-  { id: 7, name: '0x71…d9e2', avatar: '🐸', chips: 5500, seat: 'left' },
+  { id: 1, name: '0x4F…a2c1', chips: 5800, seat: 'top-left' },
+  { id: 2, name: 'anders.xrd', chips: 9200, seat: 'top' },
+  { id: 3, name: '0x9C…e17f', chips: 3250, seat: 'top-right' },
+  { id: 4, name: 'stakr_dev', chips: 6800, seat: 'right' },
+  { id: 5, name: '0x2B…7fd3', chips: 7050, seat: 'bottom-right' },
+  { id: 6, name: 'vaultan', chips: 2500, seat: 'bottom-left' },
+  { id: 7, name: '0x71…d9e2', chips: 5500, seat: 'left' },
 ];
 
 const SEAT_POS = {
@@ -118,14 +160,13 @@ export default function App() {
             <div className="flex items-center justify-between mt-2 mb-5">
               <div className="flex items-center gap-2">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-400 flex items-center justify-center">
-                  <Flame className="w-4.5 h-4.5 text-[#05070D]" strokeWidth={2.5} />
+                  <Hexagon className="w-4.5 h-4.5 text-[#05070D]" strokeWidth={2.5} fill="currentColor" />
                 </div>
                 <div>
                   <div className="font-bold text-[15px] tracking-tight font-display">Radix Poker House</div>
                   <div className="text-[10px] text-slate-500 -mt-0.5">Stokenet · Non-custodial</div>
                 </div>
               </div>
-              {/* Real wallet connect button, provided by the Radix dApp Toolkit */}
               <radix-connect-button />
             </div>
 
@@ -155,8 +196,8 @@ export default function App() {
               {TABLES.map((t) => (
                 <div key={t.id} className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-3.5 flex items-center justify-between hover:border-emerald-400/30 transition">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1A2436] to-[#0F1622] border border-white/10 flex items-center justify-center text-base">
-                      <Spade className="w-4 h-4 text-emerald-400" />
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1A2436] to-[#0F1622] border border-white/10 flex items-center justify-center">
+                      <PokerChipIcon className="w-5 h-5 text-emerald-400" />
                     </div>
                     <div>
                       <div className="flex items-center gap-1.5">
@@ -191,9 +232,13 @@ export default function App() {
         {screen === 'join' && selectedTable && (
           <div className="flex-1 flex flex-col justify-end">
             <div className="flex-1 flex flex-col items-center justify-center px-6 gap-4">
-              <div className="flex -space-x-3">
-                <div className="w-16 h-24 rounded-lg bg-[#F4F6FA] rotate-[-8deg] shadow-xl" />
-                <div className="w-16 h-24 rounded-lg bg-[#F4F6FA] rotate-[6deg] shadow-xl flex items-center justify-center text-3xl font-bold text-rose-500 font-display">8</div>
+              <div className="flex -space-x-4">
+                <div className="rotate-[-8deg]">
+                  <PlayingCard rank="A" suit="s" size="lg" faceDown />
+                </div>
+                <div className="rotate-[6deg]">
+                  <PlayingCard rank="8" suit="h" size="lg" />
+                </div>
               </div>
               <div className="text-center">
                 <h2 className="text-lg font-bold font-display">Join {selectedTable.name}</h2>
@@ -261,11 +306,11 @@ export default function App() {
               ))}
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                 <div className="flex gap-1.5">
-                  <CardMini rank="A" suit="♦" color="text-rose-500" />
-                  <CardMini rank="Q" suit="♣" color="text-slate-800" />
-                  <CardMini rank="8" suit="♥" color="text-rose-500" />
-                  <CardMini rank="J" suit="♦" color="text-rose-500" />
-                  <CardMini rank="10" suit="♣" color="text-slate-800" />
+                  <PlayingCard rank="A" suit="d" size="sm" />
+                  <PlayingCard rank="Q" suit="c" size="sm" />
+                  <PlayingCard rank="8" suit="h" size="sm" />
+                  <PlayingCard rank="J" suit="d" size="sm" />
+                  <PlayingCard rank="10" suit="c" size="sm" />
                 </div>
                 <span className="text-[9px] uppercase tracking-widest text-slate-600">River</span>
               </div>
@@ -273,8 +318,8 @@ export default function App() {
 
             <div className="flex flex-col items-center gap-2 mb-3">
               <div className="flex gap-1.5">
-                <CardMini rank="K" suit="♠" color="text-slate-800" />
-                <CardMini rank="K" suit="♥" color="text-rose-500" />
+                <PlayingCard rank="K" suit="s" size="sm" />
+                <PlayingCard rank="K" suit="h" size="sm" />
               </div>
               <ChipTag amount="12,549" tone="green" />
             </div>
