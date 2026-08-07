@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import './radix.js';
+import { rdt } from './radix.js';
 import {
   Hexagon, Plus, X, Users, ShieldCheck, ChevronRight, Sparkles,
   Lock, LogOut, Minus, TrendingUp, Smartphone, Fingerprint,
@@ -137,6 +137,15 @@ function OrientationHint() {
 
 export default function App() {
   const [screen, setScreen] = useState('lobby');
+  const [walletAddress, setWalletAddress] = useState(null);
+
+  useEffect(() => {
+    const subscription = rdt.walletApi.walletData$.subscribe((state) => {
+      const account = state.accounts?.[0];
+      setWalletAddress(account?.address || null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
   const [selectedTable, setSelectedTable] = useState(null);
   const [buyIn, setBuyIn] = useState(150);
   const [raiseAmt, setRaiseAmt] = useState(550);
@@ -167,7 +176,12 @@ export default function App() {
                   <div className="text-[10px] text-slate-500 -mt-0.5">Stokenet · Non-custodial</div>
                 </div>
               </div>
-              <radix-connect-button />
+              <div className="flex flex-col items-end gap-1">
+                <radix-connect-button />
+                {walletAddress && (
+                  <span className="text-[9px] text-emerald-400 font-mono">{walletAddress.slice(0, 20)}...</span>
+                )}
+              </div>
             </div>
 
             <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#0F1B2E] via-[#0C1522] to-[#101828] border border-white/10 p-5 mb-6">
