@@ -1,8 +1,8 @@
 import { RadixDappToolkit, RadixNetwork, DataRequestBuilder } from '@radixdlt/radix-dapp-toolkit';
 
 export const DAPP_DEFINITION_ADDRESS = 'account_tdx_2_12ynl5t4pp7263sz5ynukgex92zk44092gq0d6423wyml8vv3cqtvh9';
-export const GENESIS_TABLE_COMPONENT = 'component_tdx_2_1cqrdwav7ql8stvsq8l85z9yn95s274ee6r3d4zt72xg402fh342q5p';
-export const GENESIS_TABLE_BADGE_RESOURCE = 'resource_tdx_2_1n2kjrw7lhld0cq0l8ke350854ju7p7jzsteyeddyc029ww9wncapqj';
+export const GENESIS_TABLE_COMPONENT = 'component_tdx_2_1cpyxfnctg2yf98sk4vm5za0yg8alrr43caeamcqp0urgeju63647qv';
+export const GENESIS_TABLE_BADGE_RESOURCE = 'resource_tdx_2_1ngprf7qwmqcfugchxnfrg7eezt3r5qff786eurw2ry6w07kpddwk0u';
 export const DEALER_URL = 'https://radix-poker-house-dealer-production.up.railway.app';
 
 export const rdt = RadixDappToolkit({
