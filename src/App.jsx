@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { rdt, GENESIS_TABLE_COMPONENT } from './radix.js';
+import { rdt, GENESIS_TABLE_COMPONENT, DEALER_URL, onSessionReady } from './radix.js';
 import {
   Hexagon, Plus, X, Users, ShieldCheck, ChevronRight, Sparkles,
   Lock, LogOut, Minus, TrendingUp, Smartphone, Fingerprint,
@@ -150,6 +150,22 @@ export default function App() {
   const [buyIn, setBuyIn] = useState(0.1);
   const [joinStatus, setJoinStatus] = useState('idle'); // idle | pending | error
   const [joinError, setJoinError] = useState(null);
+  const [session, setSession] = useState(null); // { sessionToken, seat }
+  const [wsStatus, setWsStatus] = useState('disconnected'); // disconnected | connecting | connected
+
+  useEffect(() => {
+    onSessionReady((data) => {
+      setSession(data);
+      setWsStatus('connecting');
+      const ws = new WebSocket(DEALER_URL.replace('https://', 'wss://').replace('http://', 'ws://'));
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ type: 'register', sessionToken: data.sessionToken }));
+        setWsStatus('connected');
+      };
+      ws.onerror = () => setWsStatus('disconnected');
+      ws.onclose = () => setWsStatus('disconnected');
+    });
+  }, []);
   const [raiseAmt, setRaiseAmt] = useState(550);
 
   const XRD_RESOURCE_STOKENET = 'resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc';
@@ -353,9 +369,11 @@ export default function App() {
               <button onClick={() => setScreen('lobby')} className="flex items-center gap-1 text-[11px] text-slate-500">
                 <LogOut className="w-3.5 h-3.5" /> Leave
               </button>
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/25">
-                <Lock className="w-3 h-3 text-emerald-300" />
-                <span className="text-[10px] font-semibold text-emerald-300">BADGE ACTIVE</span>
+              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${wsStatus === 'connected' ? 'bg-emerald-400/10 border-emerald-400/25' : 'bg-amber-400/10 border-amber-400/25'}`}>
+                <Lock className={`w-3 h-3 ${wsStatus === 'connected' ? 'text-emerald-300' : 'text-amber-300'}`} />
+                <span className={`text-[10px] font-semibold ${wsStatus === 'connected' ? 'text-emerald-300' : 'text-amber-300'}`}>
+                  {wsStatus === 'connected' ? `SEAT ${session?.seat} VERIFIED` : 'VERIFYING...'}
+                </span>
               </div>
               <span className="text-xs font-mono">
                 Pot <span className="text-cyan-300 font-semibold">$1,500.22</span>
