@@ -202,19 +202,27 @@ export default function App() {
       ;
     `;
 
-    const result = await rdt.walletApi.sendTransaction({
-      transactionManifest: manifest,
-      version: 1,
-    });
+    try {
+      const result = await rdt.walletApi.sendTransaction({
+        transactionManifest: manifest,
+        version: 1,
+      });
 
-    if (result.isErr()) {
+      console.log('sendTransaction result:', result);
+
+      if (result.isErr()) {
+        setJoinStatus('error');
+        setJoinError(result.error?.message || JSON.stringify(result.error) || 'Transaction failed or was rejected.');
+        return;
+      }
+
+      setJoinStatus('idle');
+      setScreen('table');
+    } catch (err) {
+      console.error('handleJoinTable threw:', err);
       setJoinStatus('error');
-      setJoinError(result.error.message || 'Transaction failed or was rejected.');
-      return;
+      setJoinError(err?.message || 'Unexpected error sending transaction.');
     }
-
-    setJoinStatus('idle');
-    setScreen('table');
   };
 
   return (
