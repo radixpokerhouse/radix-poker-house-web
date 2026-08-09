@@ -166,6 +166,22 @@ export default function App() {
       ws.onclose = () => setWsStatus('disconnected');
     });
   }, []);
+
+  const [debugError, setDebugError] = useState(null);
+  useEffect(() => {
+    const onError = (event) => {
+      setDebugError(`${event.message} (${event.filename}:${event.lineno})`);
+    };
+    const onRejection = (event) => {
+      setDebugError(`Unhandled promise rejection: ${event.reason?.message || event.reason}`);
+    };
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onRejection);
+    return () => {
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onRejection);
+    };
+  }, []);
   const [raiseAmt, setRaiseAmt] = useState(550);
 
   const XRD_RESOURCE_STOKENET = 'resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc';
@@ -229,6 +245,11 @@ export default function App() {
     <div className="min-h-screen w-full flex items-center justify-center bg-[#05070D] p-4 font-sans">
       <div className="w-full max-w-[420px] h-[860px] rounded-[2.5rem] bg-[#0A0E1A] border border-white/10 overflow-hidden relative shadow-2xl flex flex-col">
         <OrientationHint />
+        {debugError && (
+          <div className="absolute top-10 left-2 right-2 z-50 bg-rose-950 border border-rose-500 rounded-lg p-2 text-[9px] text-rose-200 font-mono break-words">
+            {debugError}
+          </div>
+        )}
 
         <div className="flex items-center justify-between px-6 pt-4 pb-2 text-[11px] text-slate-500 font-mono">
           <span>9:41</span>
