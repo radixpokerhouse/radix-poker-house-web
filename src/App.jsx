@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { rdt } from './radix.js';
+import { rdt, GENESIS_TABLE_COMPONENT } from './radix.js';
 import {
   Hexagon, Plus, X, Users, ShieldCheck, ChevronRight, Sparkles,
   Lock, LogOut, Minus, TrendingUp, Smartphone, Fingerprint,
@@ -147,8 +147,59 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
   const [selectedTable, setSelectedTable] = useState(null);
-  const [buyIn, setBuyIn] = useState(150);
+  const [buyIn, setBuyIn] = useState(0.1);
+  const [joinStatus, setJoinStatus] = useState('idle'); // idle | pending | error
+  const [joinError, setJoinError] = useState(null);
   const [raiseAmt, setRaiseAmt] = useState(550);
+
+  const XRD_RESOURCE_STOKENET = 'resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc';
+
+  const handleJoinTable = async () => {
+    if (!walletAddress) {
+      setJoinStatus('error');
+      setJoinError('Connect your wallet first.');
+      return;
+    }
+    setJoinStatus('pending');
+    setJoinError(null);
+
+    const manifest = `
+      CALL_METHOD
+        Address("${walletAddress}")
+        "withdraw"
+        Address("${XRD_RESOURCE_STOKENET}")
+        Decimal("${buyIn}")
+      ;
+      TAKE_ALL_FROM_WORKTOP
+        Address("${XRD_RESOURCE_STOKENET}")
+        Bucket("payment")
+      ;
+      CALL_METHOD
+        Address("${GENESIS_TABLE_COMPONENT}")
+        "join_table"
+        Bucket("payment")
+      ;
+      CALL_METHOD
+        Address("${walletAddress}")
+        "deposit_batch"
+        Expression("ENTIRE_WORKTOP")
+      ;
+    `;
+
+    const result = await rdt.walletApi.sendTransaction({
+      transactionManifest: manifest,
+      version: 1,
+    });
+
+    if (result.isErr()) {
+      setJoinStatus('error');
+      setJoinError(result.error.message || 'Transaction failed or was rejected.');
+      return;
+    }
+
+    setJoinStatus('idle');
+    setScreen('table');
+  };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-[#05070D] p-4 font-sans">
@@ -265,16 +316,16 @@ export default function App() {
                 <span className="text-xs text-slate-400">Buy-in amount</span>
                 <button onClick={() => setScreen('lobby')} className="text-slate-500"><X className="w-4 h-4" /></button>
               </div>
-              <div className="text-3xl font-bold mb-1 font-mono">${buyIn}</div>
+              <div className="text-3xl font-bold mb-1 font-mono">{buyIn.toFixed(2)} XRD</div>
               <input
-                type="range" min="100" max="200" value={buyIn}
+                type="range" min="0.01" max="1" step="0.01" value={buyIn}
                 onChange={(e) => setBuyIn(+e.target.value)}
                 className="w-full accent-emerald-400 mb-3"
               />
               <div className="flex gap-2 mb-4">
-                {[100, 150, 200].map((v) => (
+                {[0.05, 0.1, 0.5].map((v) => (
                   <button key={v} onClick={() => setBuyIn(v)} className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition ${buyIn === v ? 'bg-emerald-400 text-[#05070D] border-emerald-400' : 'bg-white/5 border-white/10 text-slate-300'}`}>
-                    ${v}
+                    {v} XRD
                   </button>
                 ))}
               </div>
@@ -283,11 +334,15 @@ export default function App() {
                 This transaction issues a session badge — no further wallet prompts until you leave the table.
               </div>
               <button
-                onClick={() => setScreen('table')}
-                className="w-full py-3 rounded-xl bg-emerald-400 text-[#05070D] font-bold text-sm"
+                onClick={handleJoinTable}
+                disabled={joinStatus === 'pending'}
+                className="w-full py-3 rounded-xl bg-emerald-400 text-[#05070D] font-bold text-sm disabled:opacity-50"
               >
-                Confirm &amp; Sign
+                {joinStatus === 'pending' ? 'Waiting for wallet...' : 'Confirm & Sign'}
               </button>
+              {joinStatus === 'error' && (
+                <p className="text-[11px] text-rose-400 mt-2 text-center">{joinError}</p>
+              )}
             </div>
           </div>
         )}
