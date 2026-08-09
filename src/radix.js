@@ -21,9 +21,20 @@ export function onSessionReady(cb) {
   sessionListeners.push(cb);
 }
 
+let debugListeners = [];
+export function onDebugLog(cb) {
+  debugListeners.push(cb);
+}
+function debugLog(msg) {
+  console.log('[radix-debug]', msg);
+  debugListeners.forEach((cb) => cb(msg));
+}
+
 async function fetchChallenge() {
+  debugLog('fetchChallenge called');
   const res = await fetch(`${DEALER_URL}/auth/challenge`);
   const data = await res.json();
+  debugLog('challenge received: ' + data.challenge?.slice(0, 12));
   return data.challenge;
 }
 
@@ -34,8 +45,12 @@ rdt.walletApi.setRequestData(
 );
 
 rdt.walletApi.dataRequestControl(async (walletData) => {
+  debugLog('dataRequestControl fired, proofs: ' + JSON.stringify(walletData.proofs));
   const accountProof = walletData.proofs?.find((p) => p.type === 'account');
-  if (!accountProof) return;
+  if (!accountProof) {
+    debugLog('No account proof found in walletData');
+    return;
+  }
 
   try {
     const res = await fetch(`${DEALER_URL}/auth/verify`, {
@@ -53,7 +68,7 @@ rdt.walletApi.dataRequestControl(async (walletData) => {
       console.error('Dealer verification failed:', data.error);
     }
   } catch (e) {
-    console.error('Dealer verification request failed:', e);
+    debugLog('Dealer verification request failed: ' + e.message);
   }
 });
 

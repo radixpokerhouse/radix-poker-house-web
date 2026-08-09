@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { rdt, GENESIS_TABLE_COMPONENT, DEALER_URL, onSessionReady } from './radix.js';
+import { rdt, GENESIS_TABLE_COMPONENT, DEALER_URL, onSessionReady, onDebugLog } from './radix.js';
 import {
   Hexagon, Plus, X, Users, ShieldCheck, ChevronRight, Sparkles,
   Lock, LogOut, Minus, TrendingUp, Smartphone, Fingerprint,
@@ -168,6 +168,10 @@ export default function App() {
   }, []);
 
   const [debugError, setDebugError] = useState(null);
+  const [debugLogs, setDebugLogs] = useState([]);
+  useEffect(() => {
+    onDebugLog((msg) => setDebugLogs((logs) => [...logs.slice(-6), msg]));
+  }, []);
   useEffect(() => {
     const onError = (event) => {
       setDebugError(`${event.message} (${event.filename}:${event.lineno})`);
@@ -248,6 +252,11 @@ export default function App() {
         {debugError && (
           <div className="absolute top-10 left-2 right-2 z-50 bg-rose-950 border border-rose-500 rounded-lg p-2 text-[9px] text-rose-200 font-mono break-words">
             {debugError}
+          </div>
+        )}
+        {debugLogs.length > 0 && (
+          <div className="absolute bottom-2 left-2 right-2 z-50 bg-black/90 border border-cyan-500/40 rounded-lg p-2 text-[8px] text-cyan-300 font-mono break-words max-h-32 overflow-y-auto">
+            {debugLogs.map((log, i) => <div key={i}>{log}</div>)}
           </div>
         )}
 
