@@ -170,7 +170,7 @@ export default function App() {
   const [debugError, setDebugError] = useState(null);
   const [debugLogs, setDebugLogs] = useState([]);
   useEffect(() => {
-    onDebugLog((msg) => setDebugLogs((logs) => [...logs.slice(-6), msg]));
+    onDebugLog((msg) => setDebugLogs((logs) => [...logs.slice(-40), msg]));
   }, []);
   useEffect(() => {
     const onError = (event) => {
@@ -255,9 +255,12 @@ export default function App() {
           </div>
         )}
         {debugLogs.length > 0 && (
-          <div className="absolute top-10 left-2 right-2 z-50 bg-black/90 border border-cyan-500/40 rounded-lg p-2 text-[8px] text-cyan-300 font-mono break-words max-h-24 overflow-y-auto pointer-events-none opacity-80">
-            {debugLogs.map((log, i) => <div key={i}>{log}</div>)}
-          </div>
+          <button
+            onClick={() => navigator.clipboard.writeText(debugLogs.join('\n'))}
+            className="absolute top-10 right-2 z-50 bg-cyan-500 text-[#05070D] text-[10px] font-bold px-2 py-1 rounded-md"
+          >
+            Copy {debugLogs.length} logs
+          </button>
         )}
 
         <div className="flex items-center justify-between px-6 pt-4 pb-2 text-[11px] text-slate-500 font-mono">
