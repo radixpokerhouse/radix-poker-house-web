@@ -62,10 +62,12 @@ rdt.walletApi.dataRequestControl(async (walletData) => {
       }),
     });
     const data = await res.json();
+    debugLog('verify response: ' + JSON.stringify(data));
     if (data.sessionToken) {
+      debugLog('Session established, seat ' + data.seat);
       sessionListeners.forEach((cb) => cb(data));
     } else {
-      console.error('Dealer verification failed:', data.error);
+      debugLog('Dealer verification failed: ' + data.error);
     }
   } catch (e) {
     debugLog('Dealer verification request failed: ' + e.message);
