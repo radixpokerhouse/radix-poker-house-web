@@ -255,7 +255,7 @@ export default function App() {
           </div>
         )}
         {debugLogs.length > 0 && (
-          <div className="absolute bottom-2 left-2 right-2 z-50 bg-black/90 border border-cyan-500/40 rounded-lg p-2 text-[8px] text-cyan-300 font-mono break-words max-h-32 overflow-y-auto">
+          <div className="absolute top-10 left-2 right-2 z-50 bg-black/90 border border-cyan-500/40 rounded-lg p-2 text-[8px] text-cyan-300 font-mono break-words max-h-24 overflow-y-auto pointer-events-none opacity-80">
             {debugLogs.map((log, i) => <div key={i}>{log}</div>)}
           </div>
         )}
