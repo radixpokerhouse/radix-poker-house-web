@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { rdt, GENESIS_TABLE_COMPONENT, DEALER_URL, onSessionReady, onDebugLog } from './radix.js';
+import { getBadgeLocalId, startHand, commitAndReveal, fold, check, call as callAction, raise, showdown } from './gameplay.js';
 import {
   Hexagon, Plus, X, Users, ShieldCheck, ChevronRight, Sparkles,
   Lock, LogOut, Minus, TrendingUp, Smartphone, Fingerprint,
@@ -135,6 +136,14 @@ function OrientationHint() {
   );
 }
 
+
+const SUIT_MAP = ['s', 'h', 'd', 'c'];
+const RANK_MAP = { 11: 'J', 12: 'Q', 13: 'K', 14: 'A' };
+function toCardProps(card) {
+  if (!card) return null;
+  return { rank: RANK_MAP[card.rank] || String(card.rank), suit: SUIT_MAP[card.suit] };
+}
+
 export default function App() {
   const [screen, setScreen] = useState('lobby');
   const [walletAddress, setWalletAddress] = useState(null);
@@ -152,6 +161,11 @@ export default function App() {
   const [joinError, setJoinError] = useState(null);
   const [session, setSession] = useState(null); // { sessionToken, seat }
   const [wsStatus, setWsStatus] = useState('disconnected'); // disconnected | connecting | connected
+  const [badgeLocalId, setBadgeLocalId] = useState(null);
+  const [holeCards, setHoleCards] = useState(null);
+  const [communityCards, setCommunityCards] = useState([]);
+  const [actionStatus, setActionStatus] = useState('idle');
+  const [showdownResult, setShowdownResult] = useState(null);
 
   useEffect(() => {
     onSessionReady((data) => {
@@ -162,10 +176,35 @@ export default function App() {
         ws.send(JSON.stringify({ type: 'register', sessionToken: data.sessionToken }));
         setWsStatus('connected');
       };
+      ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'hole_cards') {
+          setHoleCards(msg.cards);
+          setCommunityCards(msg.community || []);
+        }
+      };
       ws.onerror = () => setWsStatus('disconnected');
       ws.onclose = () => setWsStatus('disconnected');
     });
   }, []);
+
+  useEffect(() => {
+    if (walletAddress) {
+      getBadgeLocalId(walletAddress).then(setBadgeLocalId).catch(console.error);
+    }
+  }, [walletAddress]);
+
+  const runAction = async (fn) => {
+    setActionStatus('pending');
+    try {
+      await fn();
+      setActionStatus('idle');
+    } catch (e) {
+      setActionStatus('error');
+      setJoinError(e.message);
+      setTimeout(() => setActionStatus('idle'), 3000);
+    }
+  };
 
   const [debugError, setDebugError] = useState(null);
   const [debugLogs, setDebugLogs] = useState([]);
@@ -186,7 +225,7 @@ export default function App() {
       window.removeEventListener('unhandledrejection', onRejection);
     };
   }, []);
-  const [raiseAmt, setRaiseAmt] = useState(550);
+  const [raiseAmt, setRaiseAmt] = useState(0.05);
 
   const XRD_RESOURCE_STOKENET = 'resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc';
 
@@ -434,24 +473,50 @@ export default function App() {
               ))}
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                 <div className="flex gap-1.5">
-                  <PlayingCard rank="A" suit="d" size="sm" />
-                  <PlayingCard rank="Q" suit="c" size="sm" />
-                  <PlayingCard rank="8" suit="h" size="sm" />
-                  <PlayingCard rank="J" suit="d" size="sm" />
-                  <PlayingCard rank="10" suit="c" size="sm" />
+                  {communityCards.length > 0
+                    ? communityCards.map((c, i) => <PlayingCard key={i} {...toCardProps(c)} size="sm" />)
+                    : [0, 1, 2, 3, 4].map((i) => <PlayingCard key={i} faceDown size="sm" />)}
                 </div>
-                <span className="text-[9px] uppercase tracking-widest text-slate-600">River</span>
+                <span className="text-[9px] uppercase tracking-widest text-slate-600">
+                  {communityCards.length > 0 ? 'Community Cards' : 'Waiting for showdown'}
+                </span>
               </div>
             </div>
 
             <div className="flex flex-col items-center gap-2 mb-3">
               <div className="flex gap-1.5">
-                <PlayingCard rank="K" suit="s" size="sm" />
-                <PlayingCard rank="K" suit="h" size="sm" />
+                {holeCards
+                  ? holeCards.map((c, i) => <PlayingCard key={i} {...toCardProps(c)} size="sm" />)
+                  : [0, 1].map((i) => <PlayingCard key={i} faceDown size="sm" />)}
               </div>
-              <ChipTag amount="12,549" tone="green" />
+              {showdownResult && (
+                <p className="text-[10px] text-cyan-300 font-mono text-center max-w-[280px]">{showdownResult}</p>
+              )}
             </div>
 
+            <div className="flex gap-2 mb-2">
+              <button
+                disabled={actionStatus === 'pending'}
+                onClick={() => runAction(() => startHand())}
+                className="flex-1 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-semibold text-slate-300 disabled:opacity-40"
+              >
+                Start Hand
+              </button>
+              <button
+                disabled={actionStatus === 'pending' || !badgeLocalId}
+                onClick={() => runAction(() => commitAndReveal(walletAddress, badgeLocalId))}
+                className="flex-1 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-semibold text-slate-300 disabled:opacity-40"
+              >
+                Ready (Fair Shuffle)
+              </button>
+              <button
+                disabled={actionStatus === 'pending'}
+                onClick={() => runAction(async () => setShowdownResult((await showdown()).transactionIntentHash ? 'Showdown submitted' : ''))}
+                className="flex-1 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-semibold text-slate-300 disabled:opacity-40"
+              >
+                Showdown
+              </button>
+            </div>
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-3 flex flex-col gap-2.5">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex gap-1.5">
@@ -460,19 +525,44 @@ export default function App() {
                   ))}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <button onClick={() => setRaiseAmt((a) => Math.max(50, a - 50))} className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center"><Minus className="w-3 h-3" /></button>
-                  <span className="text-xs font-semibold w-12 text-center font-mono">${raiseAmt}</span>
-                  <button onClick={() => setRaiseAmt((a) => a + 50)} className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center"><Plus className="w-3 h-3" /></button>
+                  <button onClick={() => setRaiseAmt((a) => Math.max(0.01, +(a - 0.01).toFixed(2)))} className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center"><Minus className="w-3 h-3" /></button>
+                  <span className="text-xs font-semibold w-16 text-center font-mono">{raiseAmt} XRD</span>
+                  <button onClick={() => setRaiseAmt((a) => +(a + 0.01).toFixed(2))} className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center"><Plus className="w-3 h-3" /></button>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button className="flex-1 py-2.5 rounded-xl bg-rose-500/90 text-xs font-bold">Fold</button>
-                <button className="flex-1 py-2.5 rounded-xl bg-white/10 text-xs font-bold">Check</button>
-                <button className="flex-1 py-2.5 rounded-xl bg-cyan-400/90 text-[#05070D] text-xs font-bold">Call $100</button>
-                <button className="flex-[1.3] py-2.5 rounded-xl bg-emerald-400 text-[#05070D] text-xs font-bold flex items-center justify-center gap-1">
+                <button
+                  disabled={actionStatus === 'pending' || !badgeLocalId}
+                  onClick={() => runAction(() => fold(walletAddress, badgeLocalId))}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-500/90 text-xs font-bold disabled:opacity-40"
+                >
+                  Fold
+                </button>
+                <button
+                  disabled={actionStatus === 'pending' || !badgeLocalId}
+                  onClick={() => runAction(() => check(walletAddress, badgeLocalId))}
+                  className="flex-1 py-2.5 rounded-xl bg-white/10 text-xs font-bold disabled:opacity-40"
+                >
+                  Check
+                </button>
+                <button
+                  disabled={actionStatus === 'pending' || !badgeLocalId}
+                  onClick={() => runAction(() => callAction(walletAddress, badgeLocalId))}
+                  className="flex-1 py-2.5 rounded-xl bg-cyan-400/90 text-[#05070D] text-xs font-bold disabled:opacity-40"
+                >
+                  Call
+                </button>
+                <button
+                  disabled={actionStatus === 'pending' || !badgeLocalId}
+                  onClick={() => runAction(() => raise(walletAddress, badgeLocalId, raiseAmt))}
+                  className="flex-[1.3] py-2.5 rounded-xl bg-emerald-400 text-[#05070D] text-xs font-bold flex items-center justify-center gap-1 disabled:opacity-40"
+                >
                   <TrendingUp className="w-3.5 h-3.5" /> Raise
                 </button>
               </div>
+              {actionStatus === 'error' && (
+                <p className="text-[10px] text-rose-400 text-center">{joinError}</p>
+              )}
             </div>
           </div>
         )}
