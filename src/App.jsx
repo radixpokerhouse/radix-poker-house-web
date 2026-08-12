@@ -380,7 +380,19 @@ export default function App() {
                     </div>
                   </div>
                   <button
-                    onClick={() => { if (t.live) { setSelectedTable(t); setScreen('join'); } }}
+                    onClick={async () => {
+                      if (!t.live) return;
+                      if (walletAddress) {
+                        const existing = await getBadgeLocalId(walletAddress);
+                        if (existing) {
+                          setBadgeLocalId(existing);
+                          setScreen('table');
+                          return;
+                        }
+                      }
+                      setSelectedTable(t);
+                      setScreen('join');
+                    }}
                     disabled={!t.live}
                     className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition ${t.live ? 'bg-emerald-400/10 text-emerald-300 border border-emerald-400/30 hover:bg-emerald-400/20' : 'bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed'}`}
                   >
