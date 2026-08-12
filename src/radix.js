@@ -1,4 +1,5 @@
 import { RadixDappToolkit, RadixNetwork, DataRequestBuilder } from '@radixdlt/radix-dapp-toolkit';
+import { GatewayApiClient } from '@radixdlt/babylon-gateway-api-sdk';
 
 export const DAPP_DEFINITION_ADDRESS = 'account_tdx_2_12ynl5t4pp7263sz5ynukgex92zk44092gq0d6423wyml8vv3cqtvh9';
 export const GENESIS_TABLE_COMPONENT = 'component_tdx_2_1cz8fw07hh03e8mn9ssu2h0vp9t3hnysjpedfhma2tc3q23a7mfkjql';
@@ -74,5 +75,11 @@ rdt.walletApi.dataRequestControl(async (walletData) => {
   }
 });
 
-export const gatewayApi = rdt.gatewayApi;
+// Use a dedicated Gateway client (not rdt.gatewayApi) -- RDT's bundled
+// client doesn't expose the same .state.innerClient shape we rely on
+// for direct badge/entity queries.
+export const gatewayApi = GatewayApiClient.initialize({
+  networkId: RadixNetwork.Stokenet,
+  applicationName: 'Radix Poker House Frontend',
+});
 export const walletApi = rdt.walletApi;

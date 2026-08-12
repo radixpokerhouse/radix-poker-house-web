@@ -383,11 +383,15 @@ export default function App() {
                     onClick={async () => {
                       if (!t.live) return;
                       if (walletAddress) {
-                        const existing = await getBadgeLocalId(walletAddress);
-                        if (existing) {
-                          setBadgeLocalId(existing);
-                          setScreen('table');
-                          return;
+                        try {
+                          const existing = await getBadgeLocalId(walletAddress);
+                          if (existing) {
+                            setBadgeLocalId(existing);
+                            setScreen('table');
+                            return;
+                          }
+                        } catch (e) {
+                          debugLog('Pre-join badge check failed: ' + e.message);
                         }
                       }
                       setSelectedTable(t);
