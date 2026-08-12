@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { rdt, GENESIS_TABLE_COMPONENT, DEALER_URL, onSessionReady, onDebugLog } from './radix.js';
+import { rdt, GENESIS_TABLE_COMPONENT, DEALER_URL, onSessionReady, onDebugLog, debugLog } from './radix.js';
 import { getBadgeLocalId, startHand, commitAndReveal, fold, check, call as callAction, raise, showdown } from './gameplay.js';
 import {
   Hexagon, Plus, X, Users, ShieldCheck, ChevronRight, Sparkles,
@@ -190,7 +190,13 @@ export default function App() {
 
   useEffect(() => {
     if (walletAddress) {
-      getBadgeLocalId(walletAddress).then(setBadgeLocalId).catch(console.error);
+      debugLog('Fetching badge for ' + walletAddress.slice(0, 20));
+      getBadgeLocalId(walletAddress)
+        .then((id) => {
+          debugLog('Badge lookup result: ' + id);
+          setBadgeLocalId(id);
+        })
+        .catch((e) => debugLog('Badge lookup FAILED: ' + e.message));
     }
   }, [walletAddress]);
 

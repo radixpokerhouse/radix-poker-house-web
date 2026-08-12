@@ -25,7 +25,7 @@ let debugListeners = [];
 export function onDebugLog(cb) {
   debugListeners.push(cb);
 }
-function debugLog(msg) {
+export function debugLog(msg) {
   console.log('[radix-debug]', msg);
   debugListeners.forEach((cb) => cb(msg));
 }
