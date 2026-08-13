@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { rdt, GENESIS_TABLE_COMPONENT, DEALER_URL, onSessionReady, onDebugLog, debugLog } from './radix.js';
-import { getBadgeLocalId, startHand, commitAndReveal, fold, check, call as callAction, raise, showdown } from './gameplay.js';
+import { getBadgeLocalId, startHand, commitAndReveal, fold, check, call as callAction, raise, showdown, getTableState } from './gameplay.js';
 import {
   Hexagon, Plus, X, Users, ShieldCheck, ChevronRight, Sparkles,
   Lock, LogOut, Minus, TrendingUp, Smartphone, Fingerprint,
@@ -200,10 +200,30 @@ export default function App() {
     }
   }, [walletAddress]);
 
-  const runAction = async (fn) => {
+  const [liveState, setLiveState] = useState(null);
+
+  const refreshTableState = async () => {
+    try {
+      const state = await getTableState();
+      setLiveState(state);
+    } catch (e) {
+      debugLog('Refresh table state failed: ' + e.message);
+    }
+  };
+
+  const runAction = async (fn, { resetCards, isShowdown } = {}) => {
     setActionStatus('pending');
     try {
       await fn();
+      if (resetCards) {
+        setHoleCards(null);
+        setCommunityCards([]);
+        setShowdownResult(null);
+      }
+      if (isShowdown) {
+        setShowdownResult('Showdown submitted — refresh in a few seconds to see the payout on-chain.');
+      }
+      await refreshTableState();
       setActionStatus('idle');
     } catch (e) {
       setActionStatus('error');
@@ -478,7 +498,7 @@ export default function App() {
                 </span>
               </div>
               <span className="text-xs font-mono">
-                Pot <span className="text-cyan-300 font-semibold">$1,500.22</span>
+                {liveState ? (liveState.handActive ? 'Hand Active' : 'Hand Over') : 'Loading...'}
               </span>
             </div>
 
@@ -519,7 +539,7 @@ export default function App() {
             <div className="flex gap-2 mb-2">
               <button
                 disabled={actionStatus === 'pending'}
-                onClick={() => runAction(() => startHand())}
+                onClick={() => runAction(() => startHand(), { resetCards: true })}
                 className="flex-1 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-semibold text-slate-300 disabled:opacity-40"
               >
                 Start Hand
@@ -533,7 +553,7 @@ export default function App() {
               </button>
               <button
                 disabled={actionStatus === 'pending'}
-                onClick={() => runAction(async () => setShowdownResult((await showdown()).transactionIntentHash ? 'Showdown submitted' : ''))}
+                onClick={() => runAction(() => showdown(), { isShowdown: true })}
                 className="flex-1 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-semibold text-slate-300 disabled:opacity-40"
               >
                 Showdown

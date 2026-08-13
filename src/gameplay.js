@@ -76,7 +76,7 @@ async function send(manifest) {
   if (result.isErr()) {
     throw new Error(result.error?.message || JSON.stringify(result.error));
   }
-  return result;
+  return result.value; // { transactionIntentHash }
 }
 
 export async function startHand() {
