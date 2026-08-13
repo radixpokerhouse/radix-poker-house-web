@@ -170,23 +170,32 @@ export default function App() {
   useEffect(() => {
     onSessionReady((data) => {
       setSession(data);
-      setWsStatus('connecting');
-      const ws = new WebSocket(DEALER_URL.replace('https://', 'wss://').replace('http://', 'ws://'));
-      ws.onopen = () => {
-        ws.send(JSON.stringify({ type: 'register', sessionToken: data.sessionToken }));
-        setWsStatus('connected');
-      };
-      ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (msg.type === 'hole_cards') {
-          setHoleCards(msg.cards);
-          setCommunityCards(msg.community || []);
-        }
-      };
-      ws.onerror = () => setWsStatus('disconnected');
-      ws.onclose = () => setWsStatus('disconnected');
+      connectWs(data.sessionToken);
     });
   }, []);
+
+  const connectWs = (sessionToken) => {
+    setWsStatus('connecting');
+    const ws = new WebSocket(DEALER_URL.replace('https://', 'wss://').replace('http://', 'ws://'));
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type: 'register', sessionToken }));
+      setWsStatus('connected');
+    };
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'hole_cards') {
+        setHoleCards(msg.cards);
+        setCommunityCards(msg.community || []);
+      }
+    };
+    ws.onerror = () => setWsStatus('disconnected');
+    ws.onclose = () => {
+      setWsStatus('disconnected');
+      // Auto-reconnect after a short delay -- the wallet session itself
+      // is still valid, only the socket dropped (e.g. tab backgrounded).
+      setTimeout(() => connectWs(sessionToken), 3000);
+    };
+  };
 
   useEffect(() => {
     if (walletAddress) {
