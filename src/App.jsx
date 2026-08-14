@@ -166,6 +166,7 @@ export default function App() {
   const [communityCards, setCommunityCards] = useState([]);
   const [actionStatus, setActionStatus] = useState('idle');
   const [showdownResult, setShowdownResult] = useState(null);
+  const [street, setStreet] = useState(0); // 0=preflop 1=flop 2=turn 3=river
 
   useEffect(() => {
     onSessionReady((data) => {
@@ -220,7 +221,7 @@ export default function App() {
     }
   };
 
-  const runAction = async (fn, { resetCards, isShowdown } = {}) => {
+  const runAction = async (fn, { resetCards, isShowdown, advanceStreet } = {}) => {
     setActionStatus('pending');
     try {
       await fn();
@@ -228,9 +229,14 @@ export default function App() {
         setHoleCards(null);
         setCommunityCards([]);
         setShowdownResult(null);
+        setStreet(0);
       }
       if (isShowdown) {
         setShowdownResult('Showdown submitted — refresh in a few seconds to see the payout on-chain.');
+        setStreet(3);
+      }
+      if (advanceStreet) {
+        setStreet((s) => Math.min(s + 1, 3));
       }
       await refreshTableState();
       setActionStatus('idle');
@@ -525,11 +531,18 @@ export default function App() {
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                 <div className="flex gap-1.5">
                   {communityCards.length > 0
-                    ? communityCards.map((c, i) => <PlayingCard key={i} {...toCardProps(c)} size="sm" />)
+                    ? [0, 1, 2, 3, 4].map((i) => {
+                        const revealedCount = street === 0 ? 0 : street === 1 ? 3 : street === 2 ? 4 : 5;
+                        return i < revealedCount
+                          ? <PlayingCard key={i} {...toCardProps(communityCards[i])} size="sm" />
+                          : <PlayingCard key={i} faceDown size="sm" />;
+                      })
                     : [0, 1, 2, 3, 4].map((i) => <PlayingCard key={i} faceDown size="sm" />)}
                 </div>
                 <span className="text-[9px] uppercase tracking-widest text-slate-600">
-                  {communityCards.length > 0 ? 'Community Cards' : 'Waiting for showdown'}
+                  {communityCards.length === 0
+                    ? 'Waiting for shuffle'
+                    : ['Pre-Flop', 'Flop', 'Turn', 'River'][street]}
                 </span>
               </div>
             </div>
@@ -591,21 +604,21 @@ export default function App() {
                 </button>
                 <button
                   disabled={actionStatus === 'pending' || !badgeLocalId}
-                  onClick={() => runAction(() => check(walletAddress, badgeLocalId))}
+                  onClick={() => runAction(() => check(walletAddress, badgeLocalId), { advanceStreet: true })}
                   className="flex-1 py-2.5 rounded-xl bg-white/10 text-xs font-bold disabled:opacity-40"
                 >
                   Check
                 </button>
                 <button
                   disabled={actionStatus === 'pending' || !badgeLocalId}
-                  onClick={() => runAction(() => callAction(walletAddress, badgeLocalId))}
+                  onClick={() => runAction(() => callAction(walletAddress, badgeLocalId), { advanceStreet: true })}
                   className="flex-1 py-2.5 rounded-xl bg-cyan-400/90 text-[#05070D] text-xs font-bold disabled:opacity-40"
                 >
                   Call
                 </button>
                 <button
                   disabled={actionStatus === 'pending' || !badgeLocalId}
-                  onClick={() => runAction(() => raise(walletAddress, badgeLocalId, raiseAmt))}
+                  onClick={() => runAction(() => raise(walletAddress, badgeLocalId, raiseAmt), { advanceStreet: true })}
                   className="flex-[1.3] py-2.5 rounded-xl bg-emerald-400 text-[#05070D] text-xs font-bold flex items-center justify-center gap-1 disabled:opacity-40"
                 >
                   <TrendingUp className="w-3.5 h-3.5" /> Raise
