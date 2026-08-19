@@ -2,8 +2,8 @@ import { RadixDappToolkit, RadixNetwork, DataRequestBuilder } from '@radixdlt/ra
 import { GatewayApiClient } from '@radixdlt/babylon-gateway-api-sdk';
 
 export const DAPP_DEFINITION_ADDRESS = 'account_tdx_2_12ynl5t4pp7263sz5ynukgex92zk44092gq0d6423wyml8vv3cqtvh9';
-export const GENESIS_TABLE_COMPONENT = 'component_tdx_2_1cz8fw07hh03e8mn9ssu2h0vp9t3hnysjpedfhma2tc3q23a7mfkjql';
-export const GENESIS_TABLE_BADGE_RESOURCE = 'resource_tdx_2_1nfwsjh5mcwjvxf9sr2cnfrrf6m46uxn02xq36jsmc57rdskpz8uhf0';
+export const GENESIS_TABLE_COMPONENT = 'component_tdx_2_1cr4mzwgky0vmftaxas6n200wln694n278gw4xws86cez9tft6nwjtv';
+export const GENESIS_TABLE_BADGE_RESOURCE = 'resource_tdx_2_1n280sw8p36p4lvteclw6vzw3gjks30xpvgv5xuzsdfadl60dgkladf';
 export const DEALER_URL = 'https://radix-poker-house-dealer-production.up.railway.app';
 
 export const rdt = RadixDappToolkit({

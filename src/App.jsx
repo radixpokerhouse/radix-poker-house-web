@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { rdt, GENESIS_TABLE_COMPONENT, DEALER_URL, onSessionReady, onDebugLog, debugLog } from './radix.js';
-import { getBadgeLocalId, startHand, commitAndReveal, fold, check, call as callAction, raise, showdown, getTableState } from './gameplay.js';
+import { getBadgeLocalId, startHand, commitAndReveal, fold, check, call as callAction, raise, showdown, getTableState, getGameStatus } from './gameplay.js';
 import {
   Hexagon, Plus, X, Users, ShieldCheck, ChevronRight, Sparkles,
   Lock, LogOut, Minus, TrendingUp, Smartphone, Fingerprint,
@@ -212,14 +212,29 @@ export default function App() {
 
   const [liveState, setLiveState] = useState(null);
 
+  const [gameStatus, setGameStatus] = useState(null);
   const refreshTableState = async () => {
     try {
       const state = await getTableState();
       setLiveState(state);
+      const status = await getGameStatus();
+      setGameStatus(status);
+      if (status) setStreet(status.street === 4 ? 3 : status.street);
     } catch (e) {
       debugLog('Refresh table state failed: ' + e.message);
     }
   };
+
+  // Keep game status fresh even without an explicit action, so turn
+  // changes made by OTHER players are picked up automatically.
+  useEffect(() => {
+    if (!session) return;
+    refreshTableState();
+    const interval = setInterval(refreshTableState, 5000);
+    return () => clearInterval(interval);
+  }, [session]);
+
+  const isMyTurn = gameStatus && session && gameStatus.currentTurn === session.seat;
 
   const runAction = async (fn, { resetCards, isShowdown, advanceStreet } = {}) => {
     setActionStatus('pending');
@@ -512,8 +527,12 @@ export default function App() {
                   {wsStatus === 'connected' ? `SEAT ${session?.seat} VERIFIED` : 'VERIFYING...'}
                 </span>
               </div>
-              <span className="text-xs font-mono">
-                {liveState ? (liveState.handActive ? 'Hand Active' : 'Hand Over') : 'Loading...'}
+              <span className="text-xs font-mono text-right">
+                {gameStatus ? (
+                  gameStatus.handActive
+                    ? (isMyTurn ? 'Your Turn' : `Seat ${gameStatus.currentTurn}'s Turn`)
+                    : 'Hand Over'
+                ) : 'Loading...'}
               </span>
             </div>
 
@@ -574,7 +593,7 @@ export default function App() {
                 Ready (Fair Shuffle)
               </button>
               <button
-                disabled={actionStatus === 'pending'}
+                disabled={actionStatus === 'pending' || !gameStatus || gameStatus.street !== 4}
                 onClick={() => runAction(() => showdown(), { isShowdown: true })}
                 className="flex-1 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-semibold text-slate-300 disabled:opacity-40"
               >
@@ -596,28 +615,28 @@ export default function App() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  disabled={actionStatus === 'pending' || !badgeLocalId}
+                  disabled={actionStatus === 'pending' || !badgeLocalId || !isMyTurn}
                   onClick={() => runAction(() => fold(walletAddress, badgeLocalId))}
                   className="flex-1 py-2.5 rounded-xl bg-rose-500/90 text-xs font-bold disabled:opacity-40"
                 >
                   Fold
                 </button>
                 <button
-                  disabled={actionStatus === 'pending' || !badgeLocalId}
+                  disabled={actionStatus === 'pending' || !badgeLocalId || !isMyTurn}
                   onClick={() => runAction(() => check(walletAddress, badgeLocalId), { advanceStreet: true })}
                   className="flex-1 py-2.5 rounded-xl bg-white/10 text-xs font-bold disabled:opacity-40"
                 >
                   Check
                 </button>
                 <button
-                  disabled={actionStatus === 'pending' || !badgeLocalId}
+                  disabled={actionStatus === 'pending' || !badgeLocalId || !isMyTurn}
                   onClick={() => runAction(() => callAction(walletAddress, badgeLocalId), { advanceStreet: true })}
                   className="flex-1 py-2.5 rounded-xl bg-cyan-400/90 text-[#05070D] text-xs font-bold disabled:opacity-40"
                 >
                   Call
                 </button>
                 <button
-                  disabled={actionStatus === 'pending' || !badgeLocalId}
+                  disabled={actionStatus === 'pending' || !badgeLocalId || !isMyTurn}
                   onClick={() => runAction(() => raise(walletAddress, badgeLocalId, raiseAmt), { advanceStreet: true })}
                   className="flex-[1.3] py-2.5 rounded-xl bg-emerald-400 text-[#05070D] text-xs font-bold flex items-center justify-center gap-1 disabled:opacity-40"
                 >

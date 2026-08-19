@@ -1,5 +1,5 @@
 import { blake2b } from 'blakejs';
-import { rdt, gatewayApi, GENESIS_TABLE_COMPONENT, GENESIS_TABLE_BADGE_RESOURCE } from './radix.js';
+import { rdt, gatewayApi, GENESIS_TABLE_COMPONENT, GENESIS_TABLE_BADGE_RESOURCE, debugLog } from './radix.js';
 
 function toHex(bytes) {
   return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -148,5 +148,38 @@ export async function getTableState() {
     handActive: get('hand_active')?.value,
     currentBet: get('current_bet')?.value,
     activeSeats: (get('active_seats')?.entries || []).map((e) => Number(e.key.value)),
+  };
+}
+
+// Reads the contract's game_status() view: (hand_active, street, current_turn, current_bet)
+export async function getGameStatus() {
+  const status = await gatewayApi.status.innerClient.gatewayStatus();
+  const epoch = status.ledger_state.epoch;
+
+  const result = await gatewayApi.transaction.innerClient.transactionPreview({
+    transactionPreviewRequest: {
+      manifest: `
+        CALL_METHOD
+          Address("${GENESIS_TABLE_COMPONENT}")
+          "game_status"
+        ;
+      `,
+      start_epoch_inclusive: epoch,
+      end_epoch_exclusive: epoch + 10,
+      tip_percentage: 0,
+      nonce: Math.floor(Math.random() * 1000000),
+      signer_public_keys: [],
+      flags: { use_free_credit: true, assume_all_signature_proofs: true, skip_epoch_check: true },
+    },
+  });
+  debugLog('game_status preview: ' + JSON.stringify(result).slice(0, 300));
+  const output = result.receipt?.output?.[1]?.programmatic_json;
+  if (!output || output.kind !== 'Tuple') return null;
+  const [handActive, street, currentTurn, currentBet] = output.fields;
+  return {
+    handActive: handActive.value,
+    street: Number(street.value),
+    currentTurn: Number(currentTurn.value),
+    currentBet: currentBet.value,
   };
 }
