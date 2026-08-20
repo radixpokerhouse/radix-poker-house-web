@@ -156,7 +156,7 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
   const [selectedTable, setSelectedTable] = useState(null);
-  const [buyIn, setBuyIn] = useState(0.1);
+  const [buyIn, setBuyIn] = useState(200);
   const [joinStatus, setJoinStatus] = useState('idle'); // idle | pending | error
   const [joinError, setJoinError] = useState(null);
   const [session, setSession] = useState(null); // { sessionToken, seat }
@@ -474,7 +474,7 @@ export default function App() {
                 </div>
               </div>
               <div className="text-center">
-                <h2 className="text-lg font-bold font-display">Join {selectedTable.name}</h2>
+                <h2 className="text-lg font-bold font-display">Join High Stakes Table</h2>
                 <p className="text-xs text-slate-500 mt-1">Your stack: <span className="text-slate-300 font-semibold">1.284 XRD</span></p>
               </div>
             </div>
@@ -484,14 +484,14 @@ export default function App() {
                 <span className="text-xs text-slate-400">Buy-in amount</span>
                 <button onClick={() => setScreen('lobby')} className="text-slate-500"><X className="w-4 h-4" /></button>
               </div>
-              <div className="text-3xl font-bold mb-1 font-mono">{buyIn.toFixed(2)} XRD</div>
+              <div className="text-3xl font-bold mb-1 font-mono">{buyIn.toFixed(0)} XRD</div>
               <input
-                type="range" min="0.01" max="1" step="0.01" value={buyIn}
+                type="range" min="100" max="2000" step="10" value={buyIn}
                 onChange={(e) => setBuyIn(+e.target.value)}
                 className="w-full accent-emerald-400 mb-3"
               />
               <div className="flex gap-2 mb-4">
-                {[0.05, 0.1, 0.5].map((v) => (
+                {[100, 500, 1000].map((v) => (
                   <button key={v} onClick={() => setBuyIn(v)} className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition ${buyIn === v ? 'bg-emerald-400 text-[#05070D] border-emerald-400' : 'bg-white/5 border-white/10 text-slate-300'}`}>
                     {v} XRD
                   </button>
