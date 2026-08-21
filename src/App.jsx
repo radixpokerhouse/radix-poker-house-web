@@ -281,7 +281,7 @@ export default function App() {
       window.removeEventListener('unhandledrejection', onRejection);
     };
   }, []);
-  const [raiseAmt, setRaiseAmt] = useState(0.05);
+  const [raiseAmt, setRaiseAmt] = useState(200);
 
   const XRD_RESOURCE_STOKENET = 'resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc';
 
@@ -608,9 +608,14 @@ export default function App() {
                   ))}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <button onClick={() => setRaiseAmt((a) => Math.max(0.01, +(a - 0.01).toFixed(2)))} className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center"><Minus className="w-3 h-3" /></button>
-                  <span className="text-xs font-semibold w-16 text-center font-mono">{raiseAmt} XRD</span>
-                  <button onClick={() => setRaiseAmt((a) => +(a + 0.01).toFixed(2))} className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center"><Plus className="w-3 h-3" /></button>
+                  <button onClick={() => setRaiseAmt((a) => Math.max(10, a - 50))} className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center shrink-0"><Minus className="w-3 h-3" /></button>
+                  <input
+                    type="number"
+                    value={raiseAmt}
+                    onChange={(e) => setRaiseAmt(Math.max(0, +e.target.value))}
+                    className="text-xs font-semibold w-20 text-center font-mono bg-white/5 border border-white/10 rounded-md py-1 outline-none focus:border-emerald-400"
+                  />
+                  <button onClick={() => setRaiseAmt((a) => a + 50)} className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center shrink-0"><Plus className="w-3 h-3" /></button>
                 </div>
               </div>
               <div className="flex items-center gap-2">
