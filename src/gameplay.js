@@ -172,7 +172,8 @@ export async function getGameStatus() {
       flags: { use_free_credit: true, assume_all_signature_proofs: true, skip_epoch_check: true },
     },
   });
-  debugLog('game_status preview: ' + JSON.stringify(result).slice(0, 300));
+  debugLog('receipt keys: ' + Object.keys(result.receipt || {}).join(','));
+  debugLog('output raw: ' + JSON.stringify(result.receipt?.output).slice(0, 500));
   const output = result.receipt?.output?.[1]?.programmatic_json;
   if (!output || output.kind !== 'Tuple') return null;
   const [handActive, street, currentTurn, currentBet] = output.fields;
